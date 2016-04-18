@@ -2,7 +2,7 @@ FROM alpine:3.3
 
 MAINTAINER Trurl McByte <trurl@mcbyte.net>
 
-ENV VERSION 0.9
+ENV VERSION=0.9
 ENV LUAVER=5.1
 
 # Install dependencies

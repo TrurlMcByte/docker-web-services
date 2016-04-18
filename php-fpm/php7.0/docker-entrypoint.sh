@@ -6,7 +6,7 @@ write_configs() {
     mkdir -p /data/log
 
     test -d /usr/local/etc/php-fpm.d || mkdir -p /usr/local/etc/php-fpm.d
-    test -f /usr/local/etc/php-fpm.conf.default && sed 's!=NONE/!=!g' /usr/local/etc/php-fpm.conf.default > /usr/local/etc/php-fpm.d/www.conf
+    test -f /usr/local/etc/php-fpm.conf.default && sed 's!=NONE/!=!g' /usr/local/etc/php-fpm.conf.default | grep -v 'include=' > /usr/local/etc/php-fpm.d/www.conf
 
     curl http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz > /tmp/GeoIP.dat.gz \
          && gunzip /tmp/GeoIP.dat.gz && mkdir -p /usr/share/GeoIP && mv /tmp/GeoIP.dat /usr/share/GeoIP/
