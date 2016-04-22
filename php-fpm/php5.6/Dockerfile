@@ -137,12 +137,8 @@ RUN apk add --no-cache --virtual .phpize-deps \
     && pecl install memcache \
     && pecl install rar \
     && echo | pecl install uuid \
-    && cd xdebug-$XCACHE_VERSION \
-    && phpize \
-    && configure --enable-xdebug \
-    && make \
-    && make install \
-    && cd /usr/src/php/ext \
+    && docker-php-ext-configure xdebug-$XDEBUG_VERSION \
+       --enable-xdebug \
 #    && docker-php-ext-configure xcache-$XCACHE_VERSION \
 #        --enable-xcache \
 #        --enable-xcache-constant \
@@ -153,11 +149,12 @@ RUN apk add --no-cache --virtual .phpize-deps \
 #        --enable-xcache-encoder \
 #        --enable-xcache-decoder \
     && docker-php-ext-enable geoip memcache rar uuid \
-    && docker-php-ext-install phpredis-$PHPREDIS_VERSION \
+    && docker-php-ext-install phpredis-$PHPREDIS_VERSION xdebug-$XDEBUG_VERSION \
 # xcache-$XCACHE_VERSION \
 # suhosin-$SUHOSIN_VERSION \
     && rm -rf /usr/src/php \
     && rm -rf /usr/local/src \
+    && mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini.saved \
     && runDeps="$( \
         scanelf --needed --nobanner --recursive /usr/local \
             | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
@@ -171,7 +168,14 @@ RUN apk add --no-cache --virtual .phpize-deps \
 WORKDIR /var/www/html
 
 EXPOSE 9000
-ENV MOD_XCACHE_DEMO zend_extension=xcache.so
+
+ENV MOD_XDEBUG="" \
+    MOD_MEMCACHE="" \
+    WORK_UID="" \
+    WORK_GID="" \
+    OPCACHE_ENABLE="" \
+    FPMGOPTS="" \
+    FPMOPTS="" \
 
 ADD etc /usr/local/etc/
 ADD docker-entrypoint.sh /entrypoint.sh
