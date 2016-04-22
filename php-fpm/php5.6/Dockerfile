@@ -137,8 +137,12 @@ RUN apk add --no-cache --virtual .phpize-deps \
     && pecl install memcache \
     && pecl install rar \
     && echo | pecl install uuid \
-    && docker-php-ext-configure xdebug-$XCACHE_VERSION \
-        --enable-xdebug \
+    && cd xdebug-$XCACHE_VERSION \
+    && phpize \
+    && configure --enable-xdebug \
+    && make \
+    && make install \
+    && cd /usr/src/php/ext \
 #    && docker-php-ext-configure xcache-$XCACHE_VERSION \
 #        --enable-xcache \
 #        --enable-xcache-constant \
@@ -149,7 +153,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
 #        --enable-xcache-encoder \
 #        --enable-xcache-decoder \
     && docker-php-ext-enable geoip memcache rar uuid \
-    && docker-php-ext-install phpredis-$PHPREDIS_VERSION xdebug-$XDEBUG_VERSION \
+    && docker-php-ext-install phpredis-$PHPREDIS_VERSION \
 # xcache-$XCACHE_VERSION \
 # suhosin-$SUHOSIN_VERSION \
     && rm -rf /usr/src/php \
