@@ -16,6 +16,7 @@ RUN apk add --no-cache \
 
 ENV TIDY_VERSION=5.1.25 \
     PHPREDIS_VERSION=2.2.7 \
+    XDEBUG_VERSION=XDEBUG_2_4_0 \
     XCACHE_VERSION=3.2.0 \
     SUHOSIN_VERSION=0.9.38 \
     PHP_INI_DIR=/usr/local/etc/php \
@@ -129,12 +130,15 @@ RUN apk add --no-cache --virtual .phpize-deps \
 	&& make clean \
     && cd /usr/src/php/ext \
     && curl -q https://codeload.github.com/phpredis/phpredis/tar.gz/$PHPREDIS_VERSION | tar -xz \
+    && curl -q https://codeload.github.com/xdebug/xdebug/tar.gz/$XDEBUG_VERSION | tar -xz \
 #    && curl -q https://xcache.lighttpd.net/pub/Releases/$XCACHE_VERSION/xcache-$XCACHE_VERSION.tar.gz | tar -xz \
 #    && curl -q https://download.suhosin.org/suhosin-$SUHOSIN_VERSION.tar.gz | tar -xz \
     && pecl install geoip \
     && pecl install memcache \
     && pecl install rar \
     && echo | pecl install uuid \
+    && docker-php-ext-configure xdebug-$XCACHE_VERSION \
+        --enable-xdebug \
 #    && docker-php-ext-configure xcache-$XCACHE_VERSION \
 #        --enable-xcache \
 #        --enable-xcache-constant \
@@ -145,7 +149,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
 #        --enable-xcache-encoder \
 #        --enable-xcache-decoder \
     && docker-php-ext-enable geoip memcache rar uuid \
-    && docker-php-ext-install phpredis-$PHPREDIS_VERSION \
+    && docker-php-ext-install phpredis-$PHPREDIS_VERSION xdebug-$XDEBUG_VERSION \
 # xcache-$XCACHE_VERSION \
 # suhosin-$SUHOSIN_VERSION \
     && rm -rf /usr/src/php \
@@ -163,6 +167,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
 WORKDIR /var/www/html
 
 EXPOSE 9000
+ENV MOD_XCACHE_DEMO zend_extension=xcache.so
 
 ADD etc /usr/local/etc/
 ADD docker-entrypoint.sh /entrypoint.sh
