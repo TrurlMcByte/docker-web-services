@@ -25,6 +25,7 @@ pm.status_path = /fpm-docker-status
 ping.path = /fpm-docker-ping
 request_terminate_timeout = 30s
 ' \
+    -e MOD_XDEBUG="yes" \
     -v /etc/timezone:/etc/timezone:ro \
     -v /srv/www/htdocs:/srv/www/htdocs:ro \
     trurlmcbyte/phpdir:5.6
@@ -37,6 +38,7 @@ for `--log*` see Docker logging
 `-e MOD_MEMCACHE` configure memcache module (useful for setup memcache sessions, disabled by default)
 `-e FPMOPTS` configure "www" part of php-fpm config
 `-e FPMGOPTS` configure global part of php-fpm config
+`-e MOD_XDEBUG="yes"` enable xdebug, instead of "yes" may be configuration part
 
 internal php config directory is `/usr/local/etc/php/`
 internal php-fpm config directory is `/usr/local/etc/php-fpm/`

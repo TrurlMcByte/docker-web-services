@@ -50,7 +50,6 @@ test "${MOD_XDEBUG}" && cat /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini.
  && test "${MOD_XDEBUG}" = "yes" || echo "${MOD_XDEBUG}" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 if [ $# -eq 0 ]; then
-cat /usr/local/etc/php-fpm.d/zz-docker_www.conf >&2
     /usr/local/sbin/php-fpm
 fi
 
