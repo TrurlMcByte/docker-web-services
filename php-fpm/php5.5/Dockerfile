@@ -178,7 +178,7 @@ ENV MOD_XDEBUG="" \
     WORK_GID="" \
     OPCACHE_ENABLE="" \
     FPMGOPTS="" \
-    FPMOPTS="" \
+    FPMOPTS=""
 
 ADD etc /usr/local/etc/
 ADD docker-entrypoint.sh /entrypoint.sh
