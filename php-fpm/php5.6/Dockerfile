@@ -33,6 +33,9 @@ RUN apk add --no-cache --virtual .phpize-deps \
         autoconf \
         libtool \
         automake \
+        flex \
+        bison \
+        gawk \
         file \
         g++ \
         gcc \
@@ -126,12 +129,11 @@ RUN apk add --no-cache --virtual .phpize-deps \
                 --enable-bcmath \
 	&& make -j4 \
 	&& make install \
-	&& { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \
-	&& make clean \
+    && { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \
     && cd /usr/src/php/ext \
     && curl -q https://codeload.github.com/phpredis/phpredis/tar.gz/$PHPREDIS_VERSION | tar -xz \
     && curl -q https://codeload.github.com/xdebug/xdebug/tar.gz/$XDEBUG_VERSION | tar -xz \
-#    && curl -q https://xcache.lighttpd.net/pub/Releases/$XCACHE_VERSION/xcache-$XCACHE_VERSION.tar.gz | tar -xz \
+    && curl -q https://xcache.lighttpd.net/pub/Releases/$XCACHE_VERSION/xcache-$XCACHE_VERSION.tar.gz | tar -xz \
 #    && curl -q https://download.suhosin.org/suhosin-$SUHOSIN_VERSION.tar.gz | tar -xz \
     && pecl install geoip \
     && pecl install memcache \
@@ -139,22 +141,23 @@ RUN apk add --no-cache --virtual .phpize-deps \
     && echo | pecl install uuid \
     && docker-php-ext-configure xdebug-$XDEBUG_VERSION \
        --enable-xdebug \
-#    && docker-php-ext-configure xcache-$XCACHE_VERSION \
-#        --enable-xcache \
-#        --enable-xcache-constant \
-#        --enable-xcache-optimizer \
-#        --enable-xcache-coverager \
-#        --enable-xcache-assembler \
-#        --enable-xcache-disassembler \
-#        --enable-xcache-encoder \
-#        --enable-xcache-decoder \
+   && docker-php-ext-configure xcache-$XCACHE_VERSION \
+        --enable-xcache \
+        --enable-xcache-constant \
+        --enable-xcache-optimizer \
+        --enable-xcache-coverager \
+        --enable-xcache-assembler \
+        --enable-xcache-disassembler \
+        --enable-xcache-encoder \
+        --enable-xcache-decoder \
     && docker-php-ext-enable geoip memcache rar uuid \
     && docker-php-ext-install phpredis-$PHPREDIS_VERSION xdebug-$XDEBUG_VERSION \
-# xcache-$XCACHE_VERSION \
-# suhosin-$SUHOSIN_VERSION \
+        xcache-$XCACHE_VERSION \
+#        suhosin-$SUHOSIN_VERSION \
     && rm -rf /usr/src/php \
     && rm -rf /usr/local/src \
     && mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini.saved \
+    && mv /usr/local/etc/php/conf.d/docker-php-ext-xcache.ini /usr/local/etc/php/conf.d/docker-php-ext-xcache.ini.saved \
     && runDeps="$( \
         scanelf --needed --nobanner --recursive /usr/local \
             | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
@@ -171,11 +174,12 @@ EXPOSE 9000
 
 ENV MOD_XDEBUG="" \
     MOD_MEMCACHE="" \
+    MOD_XCACHE="" \
     WORK_UID="" \
     WORK_GID="" \
     OPCACHE_ENABLE="" \
     FPMGOPTS="" \
-    FPMOPTS=""
+    FPMOPTS="" \
 
 ADD etc /usr/local/etc/
 ADD docker-entrypoint.sh /entrypoint.sh
