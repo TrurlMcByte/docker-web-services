@@ -14,10 +14,14 @@ RUN apk add --no-cache \
         libuuid \
         curl
 
+#    XCACHE_VERSION=3.2.0 \
+#    PHPREDIS_VERSION=2.2.7 \
+#    SUHOSIN_VERSION=0.9.38 \
+
+
 ENV TIDY_VERSION=5.1.25 \
-    PHPREDIS_VERSION=2.2.7 \
-    XCACHE_VERSION=3.2.0 \
-    SUHOSIN_VERSION=0.9.38 \
+    PHPREDIS_VERSION=php7-git \
+    XDEBUG_VERSION=XDEBUG_2_4_0 \
     PHP_INI_DIR=/usr/local/etc/php \
     GPG_KEYS="1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763" \
     PHP_VERSION=7.0.5 \
@@ -25,14 +29,17 @@ ENV TIDY_VERSION=5.1.25 \
     PHP_SHA256=c41f1a03c24119c0dd9b741cdb67880486e64349fc33527767f6dc28d3803abb \
     PHP_EXTRA_CONFIGURE_ARGS="--enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data"
 
+
 COPY docker-php-ext-* /usr/local/bin/
 
-
 RUN apk add --no-cache --virtual .phpize-deps \
-        git \
         autoconf \
         libtool \
         automake \
+        flex \
+        bison \
+        gawk \
+        git \
         file \
         g++ \
         gcc \
@@ -58,7 +65,6 @@ RUN apk add --no-cache --virtual .phpize-deps \
 	libxml2-dev \
 	openssl-dev \
 	sqlite-dev \
-        libmemcached-dev \
   && set -x \
     && addgroup -g 82 -S www-data \
     && adduser -u 82 -D -S -G www-data www-data \
@@ -86,7 +92,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
 	&& mv "/usr/src/php-$PHP_VERSION" /usr/src/php \
 	&& rm "$PHP_FILENAME" \
         && cd /usr/src/php \
-#	&& ./configure --help \
+	&& ./configure --help \
 	&& ./configure \
 		--with-config-file-path="$PHP_INI_DIR" \
 		--with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
@@ -127,19 +133,21 @@ RUN apk add --no-cache --virtual .phpize-deps \
                 --enable-bcmath \
 	&& make -j4 \
 	&& make install \
-	&& { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \
-	&& make clean \
+    && { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \
     && cd /usr/src/php/ext \
-     && git clone -b php7 https://github.com/phpredis/phpredis.git \
-     && docker-php-ext-install phpredis \
-     && git clone -b php7 https://github.com/php-memcached-dev/php-memcached.git \
-     && docker-php-ext-configure php-memcached --disable-memcached-sasl \
-#    && curl -q https://xcache.lighttpd.net/pub/Releases/$XCACHE_VERSION/xcache-$XCACHE_VERSION.tar.gz | tar -xz \
-#    && curl -q https://download.suhosin.org/suhosin-$SUHOSIN_VERSION.tar.gz | tar -xz \
+#    && curl https://codeload.github.com/phpredis/phpredis/tar.gz/$PHPREDIS_VERSION | tar -xz \
+    && curl https://codeload.github.com/xdebug/xdebug/tar.gz/$XDEBUG_VERSION | tar -xz \
+#    && curl https://xcache.lighttpd.net/pub/Releases/$XCACHE_VERSION/xcache-$XCACHE_VERSION.tar.gz | tar -xz \
+#    && curl https://download.suhosin.org/suhosin-$SUHOSIN_VERSION.tar.gz | tar -xz \
+    && git clone -b php7 https://github.com/phpredis/phpredis.git \
+    && git clone -b php7 https://github.com/websupport-sk/pecl-memcache.git memcache \
 #    && pecl install geoip \
+#    && pecl install memcache \
 #    && pecl install rar \
     && echo | pecl install uuid \
-#    && docker-php-ext-configure xcache-$XCACHE_VERSION \
+    && docker-php-ext-configure xdebug-$XDEBUG_VERSION \
+       --enable-xdebug \
+#   && docker-php-ext-configure xcache-$XCACHE_VERSION \
 #        --enable-xcache \
 #        --enable-xcache-constant \
 #        --enable-xcache-optimizer \
@@ -148,14 +156,12 @@ RUN apk add --no-cache --virtual .phpize-deps \
 #        --enable-xcache-disassembler \
 #        --enable-xcache-encoder \
 #        --enable-xcache-decoder \
-#    && docker-php-ext-enable geoip \
-#    && docker-php-ext-enable rar \
-#    && docker-php-ext-enable memcache \
     && docker-php-ext-enable uuid \
-# xcache-$XCACHE_VERSION \
-# suhosin-$SUHOSIN_VERSION \
+    && docker-php-ext-install memcache phpredis xdebug-$XDEBUG_VERSION \
     && rm -rf /usr/src/php \
     && rm -rf /usr/local/src \
+    && mv /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini.saved \
+#    && mv /usr/local/etc/php/conf.d/docker-php-ext-xcache.ini /usr/local/etc/php/conf.d/docker-php-ext-xcache.ini.saved \
     && runDeps="$( \
         scanelf --needed --nobanner --recursive /usr/local \
             | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
@@ -169,6 +175,15 @@ RUN apk add --no-cache --virtual .phpize-deps \
 WORKDIR /var/www/html
 
 EXPOSE 9000
+
+ENV MOD_XDEBUG="" \
+    MOD_MEMCACHE="" \
+    MOD_XCACHE="" \
+    WORK_UID="" \
+    WORK_GID="" \
+    OPCACHE_ENABLE="" \
+    FPMGOPTS="" \
+    FPMOPTS=""
 
 ADD etc /usr/local/etc/
 ADD docker-entrypoint.sh /entrypoint.sh
