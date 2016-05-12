@@ -31,36 +31,41 @@ COPY docker-php-ext-* /usr/local/bin/
 
 RUN apk add --no-cache --virtual .phpize-deps \
         autoconf \
-        libtool \
         automake \
-        flex \
         bison \
-        gawk \
-        file \
-        g++ \
-        gcc \
-        libc-dev \
-        make \
-        pkgconf \
-        re2c \
-        ca-certificates \
-        musl-dev \
-        zlib-dev freetype-dev libjpeg-turbo-dev libpng-dev \
-        libmcrypt-dev \
-        geoip-dev \
-        postgresql-dev \
-        libxml2-dev \
-        icu-dev libgcc \
-        gettext-dev \
         bzip2-dev \
-        util-linux-dev \
+        c-client \
+        ca-certificates \
         cmake \
-	curl-dev \
-	gnupg \
-	libedit-dev \
-	libxml2-dev \
-	openssl-dev \
-	sqlite-dev \
+        curl-dev \
+        file \
+        flex \
+        freetype-dev \
+        g++ \
+        gawk \
+        gcc \
+        geoip-dev \
+        gettext-dev \
+        gnupg \
+        icu-dev \
+        imap-dev \
+        libc-dev \
+        libedit-dev \
+        libgcc \
+        libjpeg-turbo-dev \
+        libmcrypt-dev \
+        libpng-dev \
+        libtool \
+        libxml2-dev \
+        make \
+        musl-dev \
+        openssl-dev \
+        pkgconf \
+        postgresql-dev \
+        re2c \
+        sqlite-dev \
+        util-linux-dev \
+        zlib-dev \
   && set -x \
     && addgroup -g 82 -S www-data \
     && adduser -u 82 -D -S -G www-data www-data \
@@ -118,6 +123,8 @@ RUN apk add --no-cache --virtual .phpize-deps \
                 --with-mysql \
                 --with-pdo-pgsql \
                 --with-pgsql \
+                --with-imap \
+                --with-imap-ssl \
                 --enable-wddx \
                 --enable-sysvmsg \
                 --enable-sysvsem \
