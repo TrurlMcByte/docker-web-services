@@ -57,6 +57,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
         libpng-dev \
         libtool \
         libxml2-dev \
+        libxslt-dev \
         make \
         musl-dev \
         openssl-dev \
@@ -102,38 +103,39 @@ RUN apk add --no-cache --virtual .phpize-deps \
 # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
 		--enable-mysqlnd \
 # --enable-mbstring is included here because otherwise there's no way to get pecl to use it properly (see https://github.com/docker-library/php/issues/195)
-		--enable-mbstring \
-                --enable-exif \
-		--with-curl \
-		--with-libedit \
-		--with-openssl \
-		--with-zlib \
+                --enable-bcmath \
                 --enable-calendar \
+                --enable-exif \
                 --enable-ftp \
-                --with-tidy \
-                --with-png-dir=/usr/include/ \
-                --with-freetype-dir=/usr/include/ \
-                --with-jpeg-dir=/usr/include/ \
-                --with-gd \
                 --enable-intl \
-                --with-mcrypt \
+                --enable-mbstring \
                 --enable-opcache \
-                --with-pdo-mysql \
-                --with-mysqli \
-                --with-mysql \
-                --with-pdo-pgsql \
-                --with-pgsql \
-                --with-imap \
-                --with-imap-ssl \
-                --enable-wddx \
+                --enable-shmop \
+                --enable-sockets \
                 --enable-sysvmsg \
                 --enable-sysvsem \
                 --enable-sysvshm \
+                --enable-wddx \
                 --enable-zip \
+                --with-curl \
+                --with-freetype-dir=/usr/include/ \
+                --with-gd \
                 --with-gettext \
-                --enable-shmop \
-                --enable-sockets \
-                --enable-bcmath \
+                --with-imap \
+                --with-imap-ssl \
+                --with-jpeg-dir=/usr/include/ \
+                --with-libedit \
+                --with-mcrypt \
+                --with-mysql \
+                --with-mysqli \
+                --with-openssl \
+                --with-pdo-mysql \
+                --with-pdo-pgsql \
+                --with-pgsql \
+                --with-png-dir=/usr/include/ \
+                --with-tidy \
+                --with-xsl \
+                --with-zlib \
 	&& make -j4 \
 	&& make install \
     && { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \

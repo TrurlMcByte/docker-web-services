@@ -30,36 +30,36 @@ COPY docker-php-ext-* /usr/local/bin/
 
 RUN apk add --no-cache --virtual .phpize-deps \
         autoconf \
-        libtool \
         automake \
-        flex \
         bison \
-        gawk \
-        file \
-        g++ \
-        gcc \
-        libc-dev \
-        make \
-        pkgconf \
-        re2c \
-        ca-certificates \
-        musl-dev \
-        zlib-dev freetype-dev libjpeg-turbo-dev libpng-dev \
-        libmcrypt-dev \
-        geoip-dev \
-        postgresql-dev \
-        libxml2-dev \
-        icu-dev libgcc \
-        gettext-dev \
         bzip2-dev \
-        util-linux-dev \
+        ca-certificates \
         cmake \
-	curl-dev \
-	gnupg \
-	libedit-dev \
-	libxml2-dev \
-	openssl-dev \
-	sqlite-dev \
+        curl-dev \
+        file \
+        flex \
+        g++ \
+        gawk \
+        gcc \
+        geoip-dev \
+        gettext-dev \
+        gnupg \
+        icu-dev libgcc \
+        libc-dev \
+        libedit-dev \
+        libmcrypt-dev \
+        libtool \
+        libxml2-dev \
+        libxslt-dev \
+        make \
+        musl-dev \
+        openssl-dev \
+        pkgconf \
+        postgresql-dev \
+        re2c \
+        sqlite-dev \
+        util-linux-dev \
+        zlib-dev freetype-dev libjpeg-turbo-dev libpng-dev \
   && set -x \
     && addgroup -g 82 -S www-data \
     && adduser -u 82 -D -S -G www-data www-data \
@@ -96,36 +96,37 @@ RUN apk add --no-cache --virtual .phpize-deps \
 # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
 		--enable-mysqlnd \
 # --enable-mbstring is included here because otherwise there's no way to get pecl to use it properly (see https://github.com/docker-library/php/issues/195)
-		--enable-mbstring \
-                --enable-exif \
-		--with-curl \
-		--with-libedit \
-		--with-openssl \
-		--with-zlib \
+                --enable-bcmath \
                 --enable-calendar \
+                --enable-exif \
                 --enable-ftp \
-                --with-tidy \
-                --with-png-dir=/usr/include/ \
-                --with-freetype-dir=/usr/include/ \
-                --with-jpeg-dir=/usr/include/ \
-                --with-gd \
                 --enable-intl \
-                --with-mcrypt \
+                --enable-mbstring \
                 --enable-opcache \
-                --with-pdo-mysql \
-                --with-mysqli \
-                --with-mysql \
-                --with-pdo-pgsql \
-                --with-pgsql \
-                --enable-wddx \
+                --enable-shmop \
+                --enable-sockets \
                 --enable-sysvmsg \
                 --enable-sysvsem \
                 --enable-sysvshm \
+                --enable-wddx \
                 --enable-zip \
+                --with-curl \
+                --with-freetype-dir=/usr/include/ \
+                --with-gd \
                 --with-gettext \
-                --enable-shmop \
-                --enable-sockets \
-                --enable-bcmath \
+                --with-jpeg-dir=/usr/include/ \
+                --with-libedit \
+                --with-mcrypt \
+                --with-mysql \
+                --with-mysqli \
+                --with-openssl \
+                --with-pdo-mysql \
+                --with-pdo-pgsql \
+                --with-pgsql \
+                --with-png-dir=/usr/include/ \
+                --with-tidy \
+                --with-xsl \
+                --with-zlib \
 	&& make -j4 \
 	&& make install \
     && { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \
