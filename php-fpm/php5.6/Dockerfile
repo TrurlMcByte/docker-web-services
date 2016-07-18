@@ -2,17 +2,25 @@ FROM alpine:3.3
 
 # base libs
 RUN apk add --no-cache \
-        libpq postgresql-client \
-        gettext expat libintl libgomp zlib \
-        libjpeg-turbo libxml2 \
+        bzip2 \
+        curl \
+        expat \
+        freetype \
         geoip \
-        zlib freetype libpng libjpeg-turbo \
-        bzip2 libbz2 \
-        libxslt \
+        gettext \
         icu-libs \
+        libbz2 \
+        libgomp \
+        libintl \
+        libjpeg-turbo \
         libmcrypt \
+        libpng \
+        libpq \
         libuuid \
-        curl
+        libxml2 \
+        libxslt \
+        postgresql-client \
+        zlib \
 
 ENV TIDY_VERSION=5.1.25 \
     PHPREDIS_VERSION=2.2.7 \
@@ -21,15 +29,16 @@ ENV TIDY_VERSION=5.1.25 \
     SUHOSIN_VERSION=0.9.38 \
     PHP_INI_DIR=/usr/local/etc/php \
     GPG_KEYS="0BD78B5F97500D450838F95DFE857D9A90D90EC1 6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3" \
-    PHP_VERSION=5.6.20 \
-    PHP_FILENAME=php-5.6.20.tar.xz \
-    PHP_SHA256=2b87d40213361112af49157a435e0d4cdfd334c9b7c731c8b844932b1f444e7a \
+    PHP_VERSION=5.6.23 \
+    PHP_FILENAME=php-5.6.23.tar.xz \
+    PHP_SHA256=39141e9a617af172aedbbacee7a63eb15502850f7cea20d759a9cffa7cfb0a1a \
     PHP_EXTRA_CONFIGURE_ARGS="--enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data"
 
 COPY docker-php-ext-* /usr/local/bin/
 
 
-RUN apk add --no-cache --virtual .phpize-deps \
+RUN apk add --no-cache --virtual .build-deps \
+        alpine-sdk \
         autoconf \
         automake \
         bison \
@@ -175,7 +184,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
             | sort -u \
         )" \
     && apk add --no-cache --virtual .php-rundeps $runDeps \
-    && apk del --no-cache .phpize-deps
+    && apk del --no-cache .build-deps
 
 WORKDIR /var/www/html
 
