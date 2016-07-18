@@ -24,9 +24,9 @@ ENV TIDY_VERSION=5.1.25 \
     XDEBUG_VERSION=XDEBUG_2_4_0 \
     PHP_INI_DIR=/usr/local/etc/php \
     GPG_KEYS="1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763" \
-    PHP_VERSION=7.0.5 \
-    PHP_FILENAME=php-7.0.5.tar.xz \
-    PHP_SHA256=c41f1a03c24119c0dd9b741cdb67880486e64349fc33527767f6dc28d3803abb \
+    PHP_VERSION=7.0.8 \
+    PHP_FILENAME=php-7.0.8.tar.xz \
+    PHP_SHA256=0a2142c458b0846f556b16da1c927d74c101aa951bb840549abe5c58584fb394 \
     PHP_EXTRA_CONFIGURE_ARGS="--enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data"
 
 
