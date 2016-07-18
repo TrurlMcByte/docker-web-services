@@ -22,6 +22,7 @@ RUN apk add --no-cache \
         postgresql-client \
         zlib \
 
+
 ENV TIDY_VERSION=5.1.25 \
     PHPREDIS_VERSION=2.2.7 \
     XDEBUG_VERSION=XDEBUG_2_4_0 \
