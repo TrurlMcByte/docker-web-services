@@ -173,10 +173,13 @@ RUN addgroup -S nginx \
     && make BUILDTYPE=Release \
         CXXFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
         CFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
+    && cd /usr/src/modpagespeed-${PAGESPEED_VERSION} \
+    && sh ./generate.sh \
     && cd /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/ \
     && make psol BUILDTYPE=Release \
         CXXFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
         CFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
+    && export MOD_PAGESPEED_DIR=/usr/src/modpagespeed-${PAGESPEED_VERSION}/src \
     && mkdir -p /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 \
     && mkdir -p /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/out/Release \
     && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/out/Release/obj /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/out/Release/ \
@@ -188,10 +191,10 @@ RUN addgroup -S nginx \
     && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/pagespeed_automatic.a /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 \
     && cd /usr/src/nginx-$NGINX_VERSION \
     && patch -p0 < /usr/src/nginx-watermark/nginx-watermark.patch \
-    && LD_LIBRARY_PATH=/usr/src/modpagespeed-${PAGESPEED_VERSION}/usr/lib ./configure \
+    && LD_LIBRARY_PATH=/usr/src/modpagespeed-${PAGESPEED_VERSION}/src/out/Release ./configure \
         $NGINX_CONFIG \
         --with-cc-opt="-fPIC -I /usr/include/apr-1 -O2 -g -m64 -fmessage-length=0 -fstack-protector -funwind-tables -fasynchronous-unwind-tables -fstack-protector" \
-        --with-ld-opt="-luuid -lapr-1 -laprutil-1 -licudata -licuuc -L/usr/src/modpagespeed-${PAGESPEED_VERSION}/usr/lib -lpng12 -lturbojpeg -ljpeg -lluajit-5.1" \
+        --with-ld-opt="-luuid -lapr-1 -laprutil-1 -licudata -licuuc -L/usr/src/modpagespeed-${PAGESPEED_VERSION}/src/out/Release -lpng12 -lturbojpeg -ljpeg -lluajit-5.1" \
     && make -j2 \
     && make install \
     && ls -l /usr/modules/*.so \
