@@ -1,4 +1,4 @@
-FROM alpine:3.3
+FROM alpine:latest
 
 ENV WEBDIS_REPO https://github.com/nicolasff/webdis.git
 

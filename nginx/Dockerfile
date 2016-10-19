@@ -1,8 +1,12 @@
-FROM alpine:3.3
+FROM alpine:latest
 
-MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
+MAINTAINER Trurl McByte "trurl@mcbyte.net"
 
-ENV NGINX_VERSION 1.10.0
+ENV NGINX_VERSION=1.10.2\
+    PAGESPEED_VERSION=1.11.33.1 \
+    LIBPNG_LIB=libpng12 \
+    LIBPNG_VERSION=1.2.56 \
+    SOURCE_DIR=/usr/src
 
 ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
 
@@ -31,6 +35,7 @@ ENV NGINX_CONFIG "\
     --with-http_random_index_module \
     --with-http_secure_link_module \
     --with-http_stub_status_module \
+    --with-http_dav_module \
     --with-http_xslt_module=dynamic \
     --with-http_geoip_module=dynamic \
     --with-http_perl_module=dynamic \
@@ -49,7 +54,6 @@ ENV NGINX_CONFIG "\
     --with-poll_module \
     --with-ipv6 \
     --with-file-aio \
-    --with-ld-opt=-lluajit-5.1 \
     --add-module=/usr/src/ngx_devel_kit \
     --add-module=/usr/src/ngx_cache_purge \
     --add-module=/usr/src/echo-nginx-module \
@@ -65,40 +69,63 @@ ENV NGINX_CONFIG "\
     --add-module=/usr/src/nginx-upload-progress-module \
     --add-module=/usr/src/nginx-module-vts \
     --add-module=/usr/src/nginx-rtmp-module \
+    --add-module=/usr/src/nginx-dav-ext-module \
     --add-dynamic-module=/usr/src/nginx-push-stream-module \
+    --add-dynamic-module=/usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta \
     --with-libatomic \
     --with-md5=/usr \
     --with-sha1=/usr \
     "
 
-#  --add-module=/usr/src/ngx_postgres  \
-#  --add-module=/usr/src/rds-json-nginx-module \
-#  --add-module=/usr/src/ngx_pagespeed \
-#  --with-http_dav_module \
-# '--with-cc-opt=-O2 -g -m64 -fmessage-length=0 -D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables -fstack-protector'
-# passenger
-
-RUN \
-    addgroup -S nginx \
+RUN addgroup -S nginx \
     && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
+    && apk add --no-cache \
+        apr \
+        apr-util \
+        ca-certificates \
+        icu \
+        icu-libs \
+        libjpeg-turbo \
+        libuuid \
+        openssl \
+        pcre \
+        zlib \
     && apk add --no-cache --virtual .build-deps \
-        git \
-        patch \
-        gcc \
-        libc-dev \
-        make \
-        openssl-dev \
-        pcre-dev \
-        zlib-dev \
-        linux-headers \
+        apache2-dev \
+        apr-dev \
+        apr-util-dev \
+        autoconf \
+        automake \
+        bash \
+        bison \
+        build-base \
+        cmake \
         curl \
-        gnupg \
-        libxslt-dev \
+        expat-dev \
+        file \
+        flex \
+        gawk \
+        gcc \
         gd-dev \
         geoip-dev \
-        perl-dev \
-        luajit-dev \
+        git \
+        gnupg \
+        gperf \
+        icu-dev \
         libatomic_ops-dev \
+        libc-dev \
+        libjpeg-turbo-dev \
+        libxslt-dev \
+        linux-headers \
+        luajit-dev \
+        make \
+        openssl-dev \
+        patch \
+        pcre-dev \
+        perl-dev \
+        python \
+        wget \
+        zlib-dev \
     && mkdir -p /usr/src \
     && curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o /usr/src/nginx.tar.gz \
     && curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o /usr/src/nginx.tar.gz.asc \
@@ -126,22 +153,48 @@ RUN \
     && git clone https://github.com/vozlt/nginx-module-vts.git \
     && git clone https://github.com/wandenberg/nginx-push-stream-module.git \
     && git clone https://github.com/vdvm/nginx-watermark.git \
+    && git clone https://github.com/arut/nginx-dav-ext-module.git \
+    && git clone https://github.com/wunderkraut/alpine-nginx-pagespeed.git \
+    && curl -Ls https://dl.google.com/dl/linux/mod-pagespeed/tar/beta/mod-pagespeed-beta-${PAGESPEED_VERSION}-r0.tar.bz2 | tar -jx \
+    && curl -Ls ftp://ftp.simplesystems.org/pub/libpng/png/src/${LIBPNG_LIB}/libpng-${LIBPNG_VERSION}.tar.gz | tar -zx \
+    && curl -Ls https://github.com/pagespeed/ngx_pagespeed/archive/v${PAGESPEED_VERSION}-beta.tar.gz | tar -zx\
+    && cd /usr/src/libpng-${LIBPNG_VERSION} \
+    && ./configure --build=$CBUILD --host=$CHOST --prefix=/usr --enable-shared --with-libpng-compat \
+    && make \
+    && make install \
+    && cd /usr/src/modpagespeed-${PAGESPEED_VERSION} \
+    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/automatic_makefile.patch \
+    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/libpng_cflags.patch \
+    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/pthread_nonrecursive_np.patch \
+    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/rename_c_symbols.patch \
+    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/stack_trace_posix.patch \
+    && ./generate.sh -D use_system_libs=1 -D _GLIBCXX_USE_CXX11_ABI=0 -D use_system_icu=1 \
+    && cd /usr/src/modpagespeed-${PAGESPEED_VERSION}/src \
+    && make BUILDTYPE=Release \
+        CXXFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
+        CFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
+    && cd /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/ \
+    && make psol BUILDTYPE=Release \
+        CXXFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
+        CFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
+    && mkdir -p /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 \
+    && mkdir -p /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/out/Release \
+    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/out/Release/obj /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/out/Release/ \
+    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/net /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
+    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/testing /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
+    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
+    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/third_party /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
+    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/tools /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
+    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/pagespeed_automatic.a /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 \
     && cd /usr/src/nginx-$NGINX_VERSION \
     && patch -p0 < /usr/src/nginx-watermark/nginx-watermark.patch \
-    && ./configure $NGINX_CONFIG --with-debug '--with-cc-opt=-O2 -g -m64 -fmessage-length=0 -fstack-protector -funwind-tables -fasynchronous-unwind-tables -fstack-protector' \
-    && make -j2 \
-    && mv objs/nginx objs/nginx-debug \
-    && ls -l objs/*.so \
-    && mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
-    && mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so \
-    && mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
-    && mv objs/ngx_mail_module.so objs/ngx_mail_module-debug.so \
-#    && mv objs/ngx_rtmp_module.so objs/ngx_rtmp_module-debug.so \
-    && mv objs/ngx_stream_module.so objs/ngx_stream_module-debug.so \
-    && mv objs/ngx_http_perl_module.so objs/ngx_http_perl_module-debug.so \
-    && ./configure $NGINX_CONFIG '--with-cc-opt=-O2 -g -m64 -fmessage-length=0 -fstack-protector -funwind-tables -fasynchronous-unwind-tables -fstack-protector' \
+    && LD_LIBRARY_PATH=/usr/src/modpagespeed-${PAGESPEED_VERSION}/usr/lib ./configure \
+        $NGINX_CONFIG \
+        --with-cc-opt="-fPIC -I /usr/include/apr-1 -O2 -g -m64 -fmessage-length=0 -fstack-protector -funwind-tables -fasynchronous-unwind-tables -fstack-protector" \
+        --with-ld-opt="-luuid -lapr-1 -laprutil-1 -licudata -licuuc -L/usr/src/modpagespeed-${PAGESPEED_VERSION}/usr/lib -lpng12 -lturbojpeg -ljpeg -lluajit-5.1" \
     && make -j2 \
     && make install \
+    && ls -l /usr/modules/*.so \
     && rm -rf /etc/nginx/html/ \
     && mkdir /etc/nginx/conf.d/ \
     && mkdir -p /usr/share/nginx/html/ \
@@ -149,19 +202,10 @@ RUN \
     && install -o nginx -g nginx -d /var/lib/nginx \
     && install -m644 html/index.html /usr/share/nginx/html/ \
     && install -m644 html/50x.html /usr/share/nginx/html/ \
-    && install -m755 objs/nginx-debug /usr/sbin/nginx-debug \
-    && install -m755 objs/ngx_http_xslt_filter_module-debug.so /usr/modules/debug/ngx_http_xslt_filter_module-debug.so \
-    && install -m755 objs/ngx_http_image_filter_module-debug.so /usr/modules/debug/ngx_http_image_filter_module-debug.so \
-    && install -m755 objs/ngx_http_geoip_module-debug.so /usr/modules/debug/ngx_http_geoip_module-debug.so \
-    && install -m755 objs/ngx_mail_module-debug.so /usr/modules/debug/ngx_mail_module-debug.so \
-#    && install -m755 objs/ngx_rtmp_module-debug.so /usr/modules/debug/ngx_rtmp_module-debug.so \
-    && install -m755 objs/ngx_stream_module-debug.so /usr/modules/debug/ngx_stream_module-debug.so \
-    && install -m755 objs/ngx_http_perl_module-debug.so /usr/modules/debug/ngx_http_perl_module-debug.so \
     && strip /usr/sbin/nginx* \
-    && strip /usr/modules/debug/*.so \
     && strip /usr/modules/*.so \
     && runDeps="$( \
-        scanelf --needed --nobanner /usr/sbin/nginx /usr/modules/*.so /usr/modules/debug/*.so \
+        scanelf --needed --nobanner /usr/sbin/nginx /usr/modules/*.so \
             | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
             | sort -u \
             | xargs -r apk info --installed \
