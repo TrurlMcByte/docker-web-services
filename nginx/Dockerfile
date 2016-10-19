@@ -2,8 +2,8 @@ FROM alpine:latest
 
 MAINTAINER Trurl McByte "trurl@mcbyte.net"
 
-ENV NGINX_VERSION=1.10.2\
-    PAGESPEED_VERSION=1.11.33.1 \
+ENV NGINX_VERSION=1.10.2 \
+    PAGESPEED_VERSION=1.11.33.4 \
     LIBPNG_LIB=libpng12 \
     LIBPNG_VERSION=1.2.56 \
     SOURCE_DIR=/usr/src
@@ -157,7 +157,7 @@ RUN addgroup -S nginx \
     && git clone https://github.com/wunderkraut/alpine-nginx-pagespeed.git \
     && curl -Ls https://dl.google.com/dl/linux/mod-pagespeed/tar/beta/mod-pagespeed-beta-${PAGESPEED_VERSION}-r0.tar.bz2 | tar -jx \
     && curl -Ls ftp://ftp.simplesystems.org/pub/libpng/png/src/${LIBPNG_LIB}/libpng-${LIBPNG_VERSION}.tar.gz | tar -zx \
-    && curl -Ls https://github.com/pagespeed/ngx_pagespeed/archive/v${PAGESPEED_VERSION}-beta.tar.gz | tar -zx\
+    && curl -Ls https://github.com/pagespeed/ngx_pagespeed/archive/v${PAGESPEED_VERSION}-beta.tar.gz | tar -zx \
     && cd /usr/src/libpng-${LIBPNG_VERSION} \
     && ./configure --build=$CBUILD --host=$CHOST --prefix=/usr --enable-shared --with-libpng-compat \
     && make \
