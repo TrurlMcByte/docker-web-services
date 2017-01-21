@@ -24,9 +24,9 @@ ENV TIDY_VERSION=5.1.25 \
     XDEBUG_VERSION=XDEBUG_2_4_0 \
     PHP_INI_DIR=/usr/local/etc/php \
     GPG_KEYS="1A4E8B7277C42E53DBA9C7B9BCAA30EA9C0D5763 6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3" \
-    PHP_VERSION=7.0.12 \
-    PHP_FILENAME=php-7.0.12.tar.xz \
-    PHP_SHA256=f3d6c49e1c242e5995dec15e503fde996c327eb86cd7ec45c690e93c971b83ff \
+    PHP_VERSION=7.0.13 \
+    PHP_FILENAME=php-7.0.13.tar.xz \
+    PHP_SHA256=357ba7f93975d7d836abed0852dc3ed96a988af539e87750613294cbee82f1bf \
     PHP_EXTRA_CONFIGURE_ARGS="--enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data"
 
 
@@ -112,6 +112,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
                 --enable-mbstring \
                 --enable-opcache \
                 --enable-shmop \
+                --enable-soap \
                 --enable-sockets \
                 --enable-sysvmsg \
                 --enable-sysvsem \

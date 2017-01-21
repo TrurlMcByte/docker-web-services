@@ -30,8 +30,8 @@ ENV TIDY_VERSION=5.1.25 \
     SUHOSIN_VERSION=0.9.38 \
     PHP_INI_DIR=/usr/local/etc/php \
     GPG_KEYS="6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3 0BD78B5F97500D450838F95DFE857D9A90D90EC1" \
-    PHP_VERSION=5.6.27 \
-    PHP_SHA256=16eb544498339d1d855292826e2e547ab01a31600141094959073e5e10e93ab5 \
+    PHP_VERSION=5.6.28 \
+    PHP_SHA256=07187ba2870f89cef334cd2ad6cb801aeec5eaf283da0293a9a6be75d6786d11 \
     PHP_EXTRA_CONFIGURE_ARGS="--enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data"
 
 ENV PHP_FILENAME=php-$PHP_VERSION.tar.xz
@@ -122,6 +122,7 @@ RUN apk add --no-cache --virtual .build-deps \
         --enable-mbstring \
         --enable-opcache \
         --enable-shmop \
+        --enable-soap \
         --enable-sockets \
         --enable-sysvmsg \
         --enable-sysvsem \
@@ -202,6 +203,10 @@ ENV MOD_XDEBUG="" \
     FPMOPTS=""
 
 COPY etc /usr/local/etc/
-COPY docker-entrypoint.sh /entrypoint.sh
+
+COPY ./docker-entrypoint.sh /entrypoint.sh
+
 ENTRYPOINT ["/entrypoint.sh"]
+
 CMD ["php-fpm"]
+

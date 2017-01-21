@@ -3,9 +3,6 @@ FROM alpine:latest
 MAINTAINER Trurl McByte "trurl@mcbyte.net"
 
 ENV NGINX_VERSION=1.10.2 \
-    PAGESPEED_VERSION=1.11.33.4 \
-    LIBPNG_LIB=libpng12 \
-    LIBPNG_VERSION=1.2.56 \
     SOURCE_DIR=/usr/src
 
 ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
@@ -71,7 +68,6 @@ ENV NGINX_CONFIG "\
     --add-module=/usr/src/nginx-rtmp-module \
     --add-module=/usr/src/nginx-dav-ext-module \
     --add-dynamic-module=/usr/src/nginx-push-stream-module \
-    --add-dynamic-module=/usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta \
     --with-libatomic \
     --with-md5=/usr \
     --with-sha1=/usr \
@@ -118,6 +114,7 @@ RUN addgroup -S nginx \
         libxslt-dev \
         linux-headers \
         luajit-dev \
+        libpng-dev \
         make \
         openssl-dev \
         patch \
@@ -154,47 +151,9 @@ RUN addgroup -S nginx \
     && git clone https://github.com/wandenberg/nginx-push-stream-module.git \
     && git clone https://github.com/vdvm/nginx-watermark.git \
     && git clone https://github.com/arut/nginx-dav-ext-module.git \
-    && git clone https://github.com/wunderkraut/alpine-nginx-pagespeed.git \
-    && curl -Ls https://dl.google.com/dl/linux/mod-pagespeed/tar/beta/mod-pagespeed-beta-${PAGESPEED_VERSION}-r0.tar.bz2 | tar -jx \
-    && curl -Ls ftp://ftp.simplesystems.org/pub/libpng/png/src/${LIBPNG_LIB}/libpng-${LIBPNG_VERSION}.tar.gz | tar -zx \
-    && curl -Ls https://github.com/pagespeed/ngx_pagespeed/archive/v${PAGESPEED_VERSION}-beta.tar.gz | tar -zx \
-    && cd /usr/src/libpng-${LIBPNG_VERSION} \
-    && ./configure --build=$CBUILD --host=$CHOST --prefix=/usr --enable-shared --with-libpng-compat \
-    && make \
-    && make install \
-    && cd /usr/src/modpagespeed-${PAGESPEED_VERSION} \
-    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/automatic_makefile.patch \
-    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/libpng_cflags.patch \
-    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/pthread_nonrecursive_np.patch \
-    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/rename_c_symbols.patch \
-    && patch -p1 -i /usr/src/alpine-nginx-pagespeed/patches/stack_trace_posix.patch \
-    && ./generate.sh -D use_system_libs=1 -D _GLIBCXX_USE_CXX11_ABI=0 -D use_system_icu=1 \
-    && cd /usr/src/modpagespeed-${PAGESPEED_VERSION}/src \
-    && make BUILDTYPE=Release \
-        CXXFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
-        CFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
-    && cd /usr/src/modpagespeed-${PAGESPEED_VERSION} \
-    && sh ./generate.sh \
-    && cd /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/ \
-    && make psol BUILDTYPE=Release \
-        CXXFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
-        CFLAGS=" -I/usr/include/apr-1 -I/usr/src/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" \
-    && export MOD_PAGESPEED_DIR=/usr/src/modpagespeed-${PAGESPEED_VERSION}/src \
-    && mkdir -p /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 \
-    && mkdir -p /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/out/Release \
-    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/out/Release/obj /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/out/Release/ \
-    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/net /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
-    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/testing /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
-    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
-    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/third_party /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
-    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/tools /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ \
-    && cp -r /usr/src/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/pagespeed_automatic.a /usr/src/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 \
     && cd /usr/src/nginx-$NGINX_VERSION \
     && patch -p0 < /usr/src/nginx-watermark/nginx-watermark.patch \
-    && LD_LIBRARY_PATH=/usr/src/modpagespeed-${PAGESPEED_VERSION}/src/out/Release ./configure \
-        $NGINX_CONFIG \
-        --with-cc-opt="-fPIC -I /usr/include/apr-1 -O2 -g -m64 -fmessage-length=0 -fstack-protector -funwind-tables -fasynchronous-unwind-tables -fstack-protector" \
-        --with-ld-opt="-luuid -lapr-1 -laprutil-1 -licudata -licuuc -L/usr/src/modpagespeed-${PAGESPEED_VERSION}/src/out/Release -lpng12 -lturbojpeg -ljpeg -lluajit-5.1" \
+    && ./configure $NGINX_CONFIG \
     && make -j2 \
     && make install \
     && ls -l /usr/modules/*.so \
