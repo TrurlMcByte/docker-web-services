@@ -2,7 +2,7 @@ FROM alpine:latest
 
 MAINTAINER Trurl McByte "trurl@mcbyte.net"
 
-ENV NGINX_VERSION=1.10.2 \
+ENV NGINX_VERSION=1.10.3 \
     SOURCE_DIR=/usr/src
 
 ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
@@ -67,10 +67,12 @@ ENV NGINX_CONFIG "\
     --add-module=/usr/src/nginx-module-vts \
     --add-module=/usr/src/nginx-rtmp-module \
     --add-module=/usr/src/nginx-dav-ext-module \
+    --add-module=/usr/src/ngx_upstream_resolveMK \
     --add-dynamic-module=/usr/src/nginx-push-stream-module \
     --with-libatomic \
     --with-md5=/usr \
     --with-sha1=/usr \
+    --with-cc-opt='-O2' \
     "
 
 RUN addgroup -S nginx \
@@ -134,7 +136,7 @@ RUN addgroup -S nginx \
     && rm /usr/src/nginx.tar.gz \
     && cd /usr/src \
     && git clone https://github.com/simpl/ngx_devel_kit.git ngx_devel_kit \
-    && git clone https://github.com/FRiCKLE/ngx_cache_purge.git \
+    && git clone https://github.com/nginx-modules/ngx_cache_purge.git \
     && git clone https://github.com/agentzh/echo-nginx-module.git \
     && git clone https://github.com/calio/iconv-nginx-module.git \
     && git clone https://github.com/agentzh/set-misc-nginx-module.git \
@@ -149,8 +151,9 @@ RUN addgroup -S nginx \
     && git clone https://github.com/arut/nginx-rtmp-module.git \
     && git clone https://github.com/vozlt/nginx-module-vts.git \
     && git clone https://github.com/wandenberg/nginx-push-stream-module.git \
-    && git clone https://github.com/vdvm/nginx-watermark.git \
+    && git clone -b vars https://github.com/vdvm/nginx-watermark.git \
     && git clone https://github.com/arut/nginx-dav-ext-module.git \
+    && git clone -b skydns https://github.com/TrurlMcByte/ngx_upstream_resolveMK.git \
     && cd /usr/src/nginx-$NGINX_VERSION \
     && patch -p0 < /usr/src/nginx-watermark/nginx-watermark.patch \
     && ./configure $NGINX_CONFIG \
