@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.4
 
 MAINTAINER Trurl McByte "trurl@mcbyte.net"
 
