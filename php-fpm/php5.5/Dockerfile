@@ -2,17 +2,26 @@ FROM alpine:3.4
 
 # base libs
 RUN apk add --no-cache \
-        libpq postgresql-client \
-        gettext expat libintl libgomp zlib \
-        libjpeg-turbo libxml2 \
+        bzip2 \
+        curl \
+        expat \
+        freetype \
         geoip \
-        zlib freetype libpng libjpeg-turbo \
-        bzip2 libbz2 \
-        libxslt \
+        gettext \
         icu-libs \
+        libbz2 \
+        libgomp \
+        libintl \
+        libjpeg-turbo \
         libmcrypt \
+        libpng \
+        libpq \
         libuuid \
-        curl
+        libxml2 \
+        libxslt \
+        postgresql-client \
+        xz \
+        zlib
 
 ENV TIDY_VERSION=5.1.25 \
     PHPREDIS_VERSION=2.2.7 \
@@ -20,34 +29,43 @@ ENV TIDY_VERSION=5.1.25 \
     XCACHE_VERSION=3.2.0 \
     SUHOSIN_VERSION=0.9.38 \
     PHP_INI_DIR=/usr/local/etc/php \
-    GPG_KEYS="0BD78B5F97500D450838F95DFE857D9A90D90EC1 0B96609E270F565C13292B24C13C70B87267B52D" \
-    PHP_VERSION=5.5.38 \
-    PHP_FILENAME=php-5.5.38.tar.xz \
-    PHP_SHA256=cb527c44b48343c8557fe2446464ff1d4695155a95601083e5d1f175df95580f \
+    GPG_KEYS="6E4F6AB321FDC07F2C332E3AC2BF0BC433CFC8B3 0BD78B5F97500D450838F95DFE857D9A90D90EC1" \
+    PHP_VERSION=5.6.30 \
     PHP_EXTRA_CONFIGURE_ARGS="--enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data"
+
+ENV PHP_FILENAME=php-$PHP_VERSION.tar.xz \
+    PHP_SHA256_XZ=a363185c786432f75e3c7ff956b49c3369c3f6906a6b10459f8d1ddc22f70805
 
 COPY docker-php-ext-* /usr/local/bin/
 
-RUN apk add --no-cache --virtual .phpize-deps \
+
+RUN apk add --no-cache --virtual .build-deps \
+        alpine-sdk \
         autoconf \
         automake \
         bison \
         bzip2-dev \
+        c-client \
         ca-certificates \
         cmake \
         curl-dev \
         file \
         flex \
+        freetype-dev \
         g++ \
         gawk \
         gcc \
         geoip-dev \
         gettext-dev \
         gnupg \
-        icu-dev libgcc \
+        icu-dev \
+        imap-dev \
         libc-dev \
         libedit-dev \
+        libgcc \
+        libjpeg-turbo-dev \
         libmcrypt-dev \
+        libpng-dev \
         libtool \
         libxml2-dev \
         libxslt-dev \
@@ -59,7 +77,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
         re2c \
         sqlite-dev \
         util-linux-dev \
-        zlib-dev freetype-dev libjpeg-turbo-dev libpng-dev \
+        zlib-dev \
   && set -x \
     && addgroup -g 82 -S www-data \
     && adduser -u 82 -D -S -G www-data www-data \
@@ -72,63 +90,67 @@ RUN apk add --no-cache --virtual .phpize-deps \
     && ln -s tidybuffio.h ../../../../include/buffio.h \
     && cd /usr/local/src \
     && rm -rf /usr/local/src/tidy-html5-$TIDY_VERSION \
-  && set -xe \
-	&& curl -fSL "http://php.net/get/$PHP_FILENAME/from/this/mirror" -o "$PHP_FILENAME" \
-	&& echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c - \
-	&& curl -fSL "http://php.net/get/$PHP_FILENAME.asc/from/this/mirror" -o "$PHP_FILENAME.asc" \
-	&& export GNUPGHOME="$(mktemp -d)" \
-	&& for key in $GPG_KEYS; do \
-		gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
-	done \
-	&& gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
-	&& rm -r "$GNUPGHOME" "$PHP_FILENAME.asc" \
-	&& mkdir -p /usr/src \
-	&& tar -Jxf "$PHP_FILENAME" -C /usr/src \
-	&& mv "/usr/src/php-$PHP_VERSION" /usr/src/php \
-	&& rm "$PHP_FILENAME" \
-        && cd /usr/src/php \
-	&& ./configure --help \
-	&& ./configure \
-		--with-config-file-path="$PHP_INI_DIR" \
-		--with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
-		$PHP_EXTRA_CONFIGURE_ARGS \
-		--disable-cgi \
+    && set -xe \
+    && curl -fSL "http://php.net/get/$PHP_FILENAME/from/this/mirror" -o "$PHP_FILENAME" \
+    && echo "$PHP_SHA256_XZ *$PHP_FILENAME" | sha256sum -c - \
+    && curl -fSL "http://php.net/get/$PHP_FILENAME.asc/from/this/mirror" -o "$PHP_FILENAME.asc" \
+    && export GNUPGHOME="$(mktemp -d)" \
+    && for key in $GPG_KEYS; do \
+        gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$key"; \
+    done \
+    && gpg --batch --verify "$PHP_FILENAME.asc" "$PHP_FILENAME" \
+    && rm -r "$GNUPGHOME" "$PHP_FILENAME.asc" \
+    && mkdir -p /usr/src \
+    && tar -Jxf "$PHP_FILENAME" -C /usr/src \
+    && mv "/usr/src/php-$PHP_VERSION" /usr/src/php \
+    && rm "$PHP_FILENAME" \
+    && cd /usr/src/php \
+    && ./configure --help \
+    && ./configure \
+        --with-config-file-path="$PHP_INI_DIR" \
+        --with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
+        $PHP_EXTRA_CONFIGURE_ARGS \
+        --disable-cgi \
 # --enable-mysqlnd is included here because it's harder to compile after the fact than extensions are (since it's a plugin for several extensions, not an extension in itself)
-		--enable-mysqlnd \
+        --enable-mysqlnd \
 # --enable-mbstring is included here because otherwise there's no way to get pecl to use it properly (see https://github.com/docker-library/php/issues/195)
-                --enable-bcmath \
-                --enable-calendar \
-                --enable-exif \
-                --enable-ftp \
-                --enable-intl \
-                --enable-mbstring \
-                --enable-opcache \
-                --enable-shmop \
-                --enable-sockets \
-                --enable-sysvmsg \
-                --enable-sysvsem \
-                --enable-sysvshm \
-                --enable-wddx \
-                --enable-zip \
-                --with-curl \
-                --with-freetype-dir=/usr/include/ \
-                --with-gd \
-                --with-gettext \
-                --with-jpeg-dir=/usr/include/ \
-                --with-libedit \
-                --with-mcrypt \
-                --with-mysql \
-                --with-mysqli \
-                --with-openssl \
-                --with-pdo-mysql \
-                --with-pdo-pgsql \
-                --with-pgsql \
-                --with-png-dir=/usr/include/ \
-                --with-tidy \
-                --with-xsl \
-                --with-zlib \
-	&& make -j4 \
-	&& make install \
+        --enable-bcmath \
+        --enable-calendar \
+        --enable-exif \
+        --enable-ftp \
+        --enable-intl \
+        --enable-mbstring \
+        --enable-opcache \
+        --enable-shmop \
+        --enable-soap \
+        --enable-pcntl \
+        --enable-sockets \
+        --enable-sysvmsg \
+        --enable-sysvsem \
+        --enable-sysvshm \
+        --enable-wddx \
+        --enable-zip \
+        --with-curl \
+        --with-freetype-dir=/usr/include/ \
+        --with-gd \
+        --with-gettext \
+        --with-imap \
+        --with-imap-ssl \
+        --with-jpeg-dir=/usr/include/ \
+        --with-libedit \
+        --with-mcrypt \
+        --with-mysql \
+        --with-mysqli \
+        --with-openssl \
+        --with-pdo-mysql \
+        --with-pdo-pgsql \
+        --with-pgsql \
+        --with-png-dir=/usr/include/ \
+        --with-tidy \
+        --with-xsl \
+        --with-zlib \
+    && make -j4 \
+    && make install \
     && { find /usr/local/bin /usr/local/sbin -type f -perm +0111 -exec strip --strip-all '{}' + || true; } \
     && cd /usr/src/php/ext \
     && curl -q https://codeload.github.com/phpredis/phpredis/tar.gz/$PHPREDIS_VERSION | tar -xz \
@@ -166,7 +188,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
             | sort -u \
         )" \
     && apk add --no-cache --virtual .php-rundeps $runDeps \
-    && apk del --no-cache .phpize-deps
+    && apk del --no-cache .build-deps
 
 WORKDIR /var/www/html
 
@@ -181,7 +203,11 @@ ENV MOD_XDEBUG="" \
     FPMGOPTS="" \
     FPMOPTS=""
 
-ADD etc /usr/local/etc/
-ADD docker-entrypoint.sh /entrypoint.sh
+COPY etc /usr/local/etc/
+
+COPY ./docker-entrypoint.sh /entrypoint.sh
+
 ENTRYPOINT ["/entrypoint.sh"]
+
 CMD ["php-fpm"]
+
