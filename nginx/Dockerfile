@@ -2,7 +2,7 @@ FROM alpine:3.4
 
 MAINTAINER Trurl McByte "trurl@mcbyte.net"
 
-ENV NGINX_VERSION=1.10.3 \
+ENV NGINX_VERSION=1.12.0 \
     SOURCE_DIR=/usr/src
 
 ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
@@ -56,17 +56,17 @@ ENV NGINX_CONFIG "\
     --add-module=/usr/src/echo-nginx-module \
     --add-module=/usr/src/iconv-nginx-module \
     --add-module=/usr/src/set-misc-nginx-module \
-    --add-module=/usr/src/redis2-nginx-module \
+    --add-dynamic-module=/usr/src/redis2-nginx-module \
     --add-module=/usr/src/nginx-eval-module \
     --add-module=/usr/src/nginx-let-module \
     --add-module=/usr/src/form-input-nginx-module \
     --add-module=/usr/src/headers-more-nginx-module \
     --add-module=/usr/src/lua-nginx-module \
-    --add-module=/usr/src/nginx-upload-module \
-    --add-module=/usr/src/nginx-upload-progress-module \
+    --add-dynamic-module=/usr/src/nginx-upload-module \
+    --add-dynamic-module=/usr/src/nginx-upload-progress-module \
     --add-module=/usr/src/nginx-module-vts \
-    --add-module=/usr/src/nginx-rtmp-module \
-    --add-module=/usr/src/nginx-dav-ext-module \
+    --add-dynamic-module=/usr/src/nginx-rtmp-module \
+    --add-dynamic-module=/usr/src/nginx-dav-ext-module \
     --add-module=/usr/src/ngx_upstream_resolveMK \
     --add-dynamic-module=/usr/src/nginx-push-stream-module \
     --with-libatomic \
@@ -75,17 +75,18 @@ ENV NGINX_CONFIG "\
     --with-cc-opt='-O2' \
     "
 
+#        openssl 
 RUN addgroup -S nginx \
     && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
     && apk add --no-cache \
         apr \
         apr-util \
         ca-certificates \
+        curl \
         icu \
         icu-libs \
         libjpeg-turbo \
         libuuid \
-        openssl \
         pcre \
         zlib \
     && apk add --no-cache --virtual .build-deps \
@@ -98,7 +99,6 @@ RUN addgroup -S nginx \
         bison \
         build-base \
         cmake \
-        curl \
         expat-dev \
         file \
         flex \
@@ -113,10 +113,10 @@ RUN addgroup -S nginx \
         libatomic_ops-dev \
         libc-dev \
         libjpeg-turbo-dev \
+        libpng-dev \
         libxslt-dev \
         linux-headers \
         luajit-dev \
-        libpng-dev \
         make \
         openssl-dev \
         patch \
@@ -146,18 +146,18 @@ RUN addgroup -S nginx \
     && git clone https://github.com/calio/form-input-nginx-module.git \
     && git clone https://github.com/openresty/headers-more-nginx-module.git \
     && git clone https://github.com/chaoslawful/lua-nginx-module.git \
-    && git clone -b 2.2 https://github.com/vkholodkov/nginx-upload-module.git \
+    && git clone -b 2.2 https://github.com/Austinb/nginx-upload-module.git \
     && git clone https://github.com/masterzen/nginx-upload-progress-module.git \
     && git clone https://github.com/arut/nginx-rtmp-module.git \
     && git clone https://github.com/vozlt/nginx-module-vts.git \
     && git clone https://github.com/wandenberg/nginx-push-stream-module.git \
     && git clone -b vars https://github.com/vdvm/nginx-watermark.git \
     && git clone https://github.com/arut/nginx-dav-ext-module.git \
-    && git clone -b skydns https://github.com/TrurlMcByte/ngx_upstream_resolveMK.git \
+    && git clone https://github.com/HatsuneMiku3939/ngx_upstream_resolveMK.git \
     && cd /usr/src/nginx-$NGINX_VERSION \
     && patch -p0 < /usr/src/nginx-watermark/nginx-watermark.patch \
     && ./configure $NGINX_CONFIG \
-    && make -j2 \
+    && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install \
     && ls -l /usr/modules/*.so \
     && rm -rf /etc/nginx/html/ \
@@ -167,8 +167,8 @@ RUN addgroup -S nginx \
     && install -o nginx -g nginx -d /var/lib/nginx \
     && install -m644 html/index.html /usr/share/nginx/html/ \
     && install -m644 html/50x.html /usr/share/nginx/html/ \
-    && strip /usr/sbin/nginx* \
-    && strip /usr/modules/*.so \
+#    && strip /usr/sbin/nginx* \
+#    && strip /usr/modules/*.so \
     && runDeps="$( \
         scanelf --needed --nobanner /usr/sbin/nginx /usr/modules/*.so \
             | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
@@ -189,5 +189,8 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80 443
+
+HEALTHCHECK --interval=2m --timeout=3s --retries=2 \
+  CMD curl -f http://localhost/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
