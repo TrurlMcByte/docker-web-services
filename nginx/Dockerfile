@@ -2,7 +2,7 @@ FROM alpine:3.4
 
 MAINTAINER Trurl McByte "trurl@mcbyte.net"
 
-ENV NGINX_VERSION=1.12.0 \
+ENV NGINX_VERSION=1.12.1 \
     SOURCE_DIR=/usr/src
 
 ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
@@ -75,10 +75,10 @@ ENV NGINX_CONFIG "\
     --with-cc-opt='-O2' \
     "
 
-#        openssl 
 RUN addgroup -S nginx \
     && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
     && apk add --no-cache \
+        openssl \
         apr \
         apr-util \
         ca-certificates \
@@ -179,8 +179,6 @@ RUN addgroup -S nginx \
     && apk add --virtual .nginx-rundeps $runDeps \
     && apk del .build-deps \
     && rm -rf /usr/src/* \
-    && apk add --no-cache gettext \
-    \
     # forward request and error logs to docker log collector
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
