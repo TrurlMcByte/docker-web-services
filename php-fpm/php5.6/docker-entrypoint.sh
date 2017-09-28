@@ -4,7 +4,6 @@ set -e
 write_configs() {
 
     mkdir -p /data/log
-
     test -d /usr/local/etc/php-fpm.d || mkdir -p /usr/local/etc/php-fpm.d
     test -f /usr/local/etc/php-fpm.conf.default && sed 's!=NONE/!=!g' /usr/local/etc/php-fpm.conf.default | grep -v 'include=' > /usr/local/etc/php-fpm.d/www.conf
     if test -f /usr/local/etc/php-fpm.d/www.conf.default; then
@@ -12,13 +11,18 @@ write_configs() {
         cp /usr/local/etc/php-fpm.d/www.conf.default /usr/local/etc/php-fpm.d/www.conf
     fi
 
-    curl http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz > /tmp/GeoIP.dat.gz \
+    curl -s -o /tmp/GeoIP.dat.gz http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz \
          && gunzip /tmp/GeoIP.dat.gz && mkdir -p /usr/share/GeoIP && mv /tmp/GeoIP.dat /usr/share/GeoIP/
+
+    #mkdir -p /usr/local/etc/php/
+    #curl -s -o /usr/local/etc/php/browscap.ini  'https://browscap.org/stream?q=Lite_PHP_BrowsCapINI' # 'https://browscap.org/stream?q=Full_PHP_BrowsCapINI'
 
     touch /usr/local/etc/php.configured
 }
 
+#test -e /usr/local/etc/php.configured && /usr/bin/find /usr/local/etc/php.configured -mtime +30 -print0 | xargs -r0 rm
 test -e /usr/local/etc/php.configured || write_configs
+
 test "${OPCACHE_ENABLE}" && echo "zend_extension=opcache.so" > /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
 test "${OPCACHE_DISABLE}" && rm /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
 
