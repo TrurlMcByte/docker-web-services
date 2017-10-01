@@ -8,6 +8,7 @@ RUN apk add --no-cache \
         geoip \
         zlib freetype libpng libjpeg-turbo \
         bzip2 libbz2 \
+        openssl \
         libxslt \
         icu-libs \
         libmcrypt \
@@ -19,13 +20,13 @@ RUN apk add --no-cache \
 #    SUHOSIN_VERSION=0.9.38 \
 
 
-ENV PHP_VERSION=7.1.5 \
-    TIDY_VERSION=5.1.25 \
+ENV PHP_VERSION=7.1.10 \
+    TIDY_VERSION=5.4.0 \
     PHPREDIS_VERSION=php7-git \
-    XDEBUG_VERSION=XDEBUG_2_4_0 \
+    XDEBUG_VERSION=XDEBUG_2_5_5 \
     PHP_INI_DIR=/usr/local/etc/php \
     GPG_KEYS="A917B1ECDA84AEC2B568FED6F50ABC807BD5DCD0  528995BFEDFBA7191D46839EF9BA0ADA31CBD89E" \
-    PHP_SHA256=d149a3c396c45611f5dc6bf14be190f464897145a76a8e5851cf18ff7094f6ac \
+    PHP_SHA256=2b8efa771a2ead0bb3ae67b530ca505b5b286adc873cca9ce97a6e1d6815c50b \
     PHP_EXTRA_CONFIGURE_ARGS="--enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data"
 
 ENV PHP_FILENAME=php-$PHP_VERSION.tar.xz
@@ -145,7 +146,7 @@ RUN apk add --no-cache --virtual .phpize-deps \
     && curl https://codeload.github.com/xdebug/xdebug/tar.gz/$XDEBUG_VERSION | tar -xz \
 #    && curl https://xcache.lighttpd.net/pub/Releases/$XCACHE_VERSION/xcache-$XCACHE_VERSION.tar.gz | tar -xz \
 #    && curl https://download.suhosin.org/suhosin-$SUHOSIN_VERSION.tar.gz | tar -xz \
-    && git clone -b php7 https://github.com/phpredis/phpredis.git \
+    && git clone https://github.com/phpredis/phpredis.git \
     && git clone -b php7 https://github.com/websupport-sk/pecl-memcache.git memcache \
 #    && pecl install geoip \
 #    && pecl install memcache \
