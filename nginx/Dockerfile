@@ -129,7 +129,7 @@ RUN addgroup -S nginx \
     && curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o /usr/src/nginx.tar.gz \
     && curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o /usr/src/nginx.tar.gz.asc \
     && export GNUPGHOME="$(mktemp -d)" \
-    && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
+    && gpg --keyserver ipv4.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
     && gpg --batch --verify /usr/src/nginx.tar.gz.asc /usr/src/nginx.tar.gz \
     && rm -r "$GNUPGHOME" /usr/src/nginx.tar.gz.asc \
     && tar -zxC /usr/src -f /usr/src/nginx.tar.gz \
