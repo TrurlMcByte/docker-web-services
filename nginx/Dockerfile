@@ -2,10 +2,9 @@ FROM alpine:3.4
 
 MAINTAINER Trurl McByte "trurl@mcbyte.net"
 
-ENV NGINX_VERSION=1.12.1 \
-    SOURCE_DIR=/usr/src
-
-ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
+ENV NGINX_VERSION=1.14.0 \
+    SOURCE_DIR=/usr/src \
+    GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8
 
 ENV NGINX_CONFIG "\
     --prefix=/usr/ \
@@ -38,6 +37,7 @@ ENV NGINX_CONFIG "\
     --with-http_perl_module=dynamic \
     --with-http_image_filter_module=dynamic \
     --with-http_sub_module \
+    --with-http_auth_request_module \
     --with-http_degradation_module \
     --with-mail=dynamic \
     --with-mail_ssl_module \
@@ -153,7 +153,7 @@ RUN addgroup -S nginx \
     && git clone https://github.com/wandenberg/nginx-push-stream-module.git \
     && git clone -b vars https://github.com/vdvm/nginx-watermark.git \
     && git clone https://github.com/arut/nginx-dav-ext-module.git \
-    && git clone https://github.com/HatsuneMiku3939/ngx_upstream_resolveMK.git \
+    && git clone https://github.com/TrurlMcByte/ngx_upstream_resolveMK.git \
     && cd /usr/src/nginx-$NGINX_VERSION \
     && patch -p0 < /usr/src/nginx-watermark/nginx-watermark.patch \
     && ./configure $NGINX_CONFIG \

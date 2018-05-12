@@ -12,8 +12,16 @@ write_configs() {
         cp /usr/local/etc/php-fpm.d/www.conf.default /usr/local/etc/php-fpm.d/www.conf
     fi
 
-    curl http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz > /tmp/GeoIP.dat.gz \
-         && gunzip /tmp/GeoIP.dat.gz && mkdir -p /usr/share/GeoIP && mv /tmp/GeoIP.dat /usr/share/GeoIP/
+    mkdir -p /usr/share/GeoIP/
+    test -s /usr/share/GeoIP/GeoIP.dat || touch -d '100 days ago' /usr/share/GeoIP/GeoIP.dat
+    if test "$(find /usr/share/GeoIP/GeoIP.dat -mmin +12)"; then
+      echo -n "Downloading maxmind db..."
+      curl -fSL http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz -o /tmp/GeoIP.dat.gz \
+        && gunzip /tmp/GeoIP.dat.gz && mkdir -p /usr/share/GeoIP && mv /tmp/GeoIP.dat /usr/share/GeoIP/ && echo "done"
+    else
+      echo "Use exists maxmind db"
+    fi
+
 
     touch /usr/local/etc/php.configured
 }
@@ -53,6 +61,8 @@ test "${MOD_MEMCACHE}" && echo "extension=memcache.so" > /usr/local/etc/php/conf
 
 test "${MOD_XDEBUG}" && cat /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini.saved > /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
  && test "${MOD_XDEBUG}" = "yes" || echo "${MOD_XDEBUG}" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+
+#test "${MOD_MEMPROF}" && cat /usr/local/etc/php/conf.d/docker-php-ext-memprof.ini.saved > /usr/local/etc/php/conf.d/docker-php-ext-memprof.ini
 
 test "${MOD_XCACHE}" && cat /usr/local/etc/php/conf.d/docker-php-ext-xcache.ini.saved > /usr/local/etc/php/conf.d/docker-php-ext-xcache.ini \
  && test "${MOD_XCACHE}" = "yes" || echo "${MOD_XCACHE}" >> /usr/local/etc/php/conf.d/docker-php-ext-xcache.ini
